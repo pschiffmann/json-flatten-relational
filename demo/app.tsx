@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import XLSX from "xlsx";
 import { flatten, Table, TableResolver } from "../src";
 import { TablePreview } from "./table-preview";
 
@@ -19,10 +20,20 @@ export const App: React.FC = () => {
       .then((r) => r.text())
       .then((s) => setSchema((prev) => (prev !== "" ? prev : s)));
   }, []);
+
+  const [downloadUrl, setDownloadUrl] = useState<string>();
+  useEffect(() => {
+    if (!downloadUrl) return;
+    return () => {
+      URL.revokeObjectURL(downloadUrl);
+    };
+  }, [downloadUrl]);
+
   const handleSourceInput = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setSource(e.currentTarget.value);
       setTables(undefined);
+      setDownloadUrl(undefined);
     },
     []
   );
@@ -30,6 +41,7 @@ export const App: React.FC = () => {
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setSchema(e.currentTarget.value);
       setTables(undefined);
+      setDownloadUrl(undefined);
     },
     []
   );
@@ -43,6 +55,26 @@ export const App: React.FC = () => {
       alert(`${e}`);
       throw e;
     }
+  }
+
+  function createDownloadUrl() {
+    const workbook = XLSX.utils.book_new();
+    for (const [name, data] of Object.entries(tables!)) {
+      const columns = [...data.header];
+      const worksheet = XLSX.utils.aoa_to_sheet([
+        columns,
+        ...data.rows.map((row) =>
+          columns.map((column) => (row[column] !== null ? row[column] : "null"))
+        ),
+      ]);
+      XLSX.utils.book_append_sheet(workbook, worksheet, name);
+    }
+    const encoded = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
+    setDownloadUrl(
+      URL.createObjectURL(
+        new Blob([encoded], { type: "application/octet-stream" })
+      )
+    );
   }
 
   return (
@@ -76,6 +108,14 @@ export const App: React.FC = () => {
       {tables &&
         Object.entries(tables).map(([name, data]) => (
           <TablePreview key={name} name={name} data={data} />
+        ))}
+      {tables &&
+        (downloadUrl ? (
+          <a href={downloadUrl} download="untitled.xlsx">
+            Download as .xlsx
+          </a>
+        ) : (
+          <button onClick={createDownloadUrl}>Export as .xslx</button>
         ))}
     </div>
   );

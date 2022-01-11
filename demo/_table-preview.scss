@@ -1,4 +1,6 @@
 .table-preview {
+  margin: 16px 0;
+
   &__name {
     margin: 16px 0 8px;
     font-size: 18px;
@@ -19,22 +21,20 @@
     background: #0001;
   }
 
-  &__header,
-  &__cell {
-    white-space: pre;
-    border-bottom: 1px solid #0002;
-  }
-
   &__header {
     position: sticky;
     top: 0;
     height: 40px;
     padding: 0 8px;
     text-align: left;
+    white-space: pre;
   }
 
   &__cell {
     padding: 4px 8px;
+    border-top: 1px solid #0002;
+    white-space: pre;
+    vertical-align: top;
     &--number {
       text-align: right;
     }
