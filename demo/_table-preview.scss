@@ -1,0 +1,42 @@
+.table-preview {
+  &__name {
+    margin: 16px 0 8px;
+    font-size: 18px;
+  }
+
+  &__container {
+    width: 100%;
+    max-height: 50vh;
+    overflow: auto;
+  }
+
+  &__table {
+    border: 1px solid #0002;
+    border-spacing: 0;
+  }
+
+  &__row:hover {
+    background: #0001;
+  }
+
+  &__header,
+  &__cell {
+    white-space: pre;
+    border-bottom: 1px solid #0002;
+  }
+
+  &__header {
+    position: sticky;
+    top: 0;
+    height: 40px;
+    padding: 0 8px;
+    text-align: left;
+  }
+
+  &__cell {
+    padding: 4px 8px;
+    &--number {
+      text-align: right;
+    }
+  }
+}
