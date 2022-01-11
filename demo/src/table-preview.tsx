@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Table } from "../src";
+import { Table } from "../../src";
 
 export const TablePreview = React.memo<{
   readonly name: string;

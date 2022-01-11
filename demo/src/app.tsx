@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import XLSX from "xlsx";
-import { flatten, Table, TableResolver } from "../src";
+import { flatten, Table, TableResolver } from "../../src";
 import { TablePreview } from "./table-preview";
 
 interface SerializedSchema {
@@ -13,10 +13,10 @@ export const App: React.FC = () => {
   const [schema, setSchema] = useState("");
   const [tables, setTables] = useState<{ readonly [name: string]: Table }>();
   useEffect(() => {
-    fetch("/demo/sample-data.json")
+    fetch("sample-data.json")
       .then((r) => r.text())
       .then((s) => setSource((prev) => (prev !== "" ? prev : s)));
-    fetch("/demo/sample-schema.json")
+    fetch("sample-schema.json")
       .then((r) => r.text())
       .then((s) => setSchema((prev) => (prev !== "" ? prev : s)));
   }, []);
