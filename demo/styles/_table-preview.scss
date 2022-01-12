@@ -9,16 +9,19 @@
   &__container {
     width: 100%;
     max-height: 50vh;
+    border: 1px solid #0002;
     overflow: auto;
   }
 
   &__table {
-    border: 1px solid #0002;
     border-spacing: 0;
   }
 
   &__row:hover {
     background: #0001;
+  }
+  &__row &__cell {
+    border-top: 1px solid #0002;
   }
 
   &__header {
@@ -26,15 +29,16 @@
     top: 0;
     height: 40px;
     padding: 0 8px;
+    background: #fff;
     text-align: left;
     white-space: pre;
   }
 
   &__cell {
     padding: 4px 8px;
-    border-top: 1px solid #0002;
     white-space: pre;
     vertical-align: top;
+
     &--number {
       text-align: right;
     }
