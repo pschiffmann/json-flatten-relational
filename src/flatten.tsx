@@ -1,6 +1,7 @@
 import { Matcher, matches } from "./matcher";
 
 export interface TableResolver {
+  readonly tableName: string;
   readonly path: Matcher[];
   readonly columns: {
     readonly [name: string]: {
@@ -36,33 +37,37 @@ interface TableResolverInternal extends TableResolver {
   writeRow(row: TableRow): void;
 }
 
-export function flatten<T extends { readonly [key: string]: TableResolver }>(
+export function flatten(
   data: unknown,
-  resolvers: T
-): { readonly [K in keyof T]: Table } {
-  const result: { [key: string]: Table } = {};
+  resolvers: TableResolver[]
+): Map<string, Table> {
+  const tables = new Map<string, Table>();
   const candidates = new Map<TableResolverInternal, CapturedPathSegments>();
-  for (const [tableName, resolver] of Object.entries(resolvers)) {
-    result[tableName] = {
-      header: new Set([
-        ...resolver.path
-          .map((m) => m.captureName!)
-          .filter((s) => s !== undefined),
-        ...Object.keys(resolver.columns),
-      ]),
-      rows: [],
-    };
+  for (const resolver of resolvers) {
+    let table = tables.get(resolver.tableName);
+    if (!table) {
+      tables.set(resolver.tableName, (table = { header: new Set(), rows: [] }));
+    }
+    for (const column of resolver.path
+      .map((m) => m.captureName!)
+      .filter((s) => s !== undefined)) {
+      table.header.add(column);
+    }
+    for (const column of Object.keys(resolver.columns)) {
+      table.header.add(column);
+    }
+
     const resolverInternal: TableResolverInternal = {
       ...resolver,
       writeRow(row) {
-        result[tableName].rows.push(row);
+        table!.rows.push(row);
       },
     };
     candidates.set(resolverInternal, new Map());
   }
 
   visit(data, 0, candidates);
-  return result as any;
+  return tables;
 }
 
 function visit(

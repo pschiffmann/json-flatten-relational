@@ -1,7 +1,8 @@
 {
   "version": "1",
-  "tables": {
-    "post": {
+  "resolvers": [
+    {
+      "tableName": "post",
       "path": [
         { "type": "literal", "key": "posts" },
         { "type": "index", "captureName": "index" }
@@ -14,12 +15,13 @@
         "author name": { "path": ["author", "name"] }
       }
     },
-    "comment": {
+    {
+      "tableName": "comment",
       "path": [
         { "type": "literal", "key": "posts" },
         { "type": "index", "captureName": "post index" },
         { "type": "literal", "key": "comments" },
-        { "type": "index", "captureName": "comment index" }
+        { "type": "index" }
       ],
       "columns": {
         "comment id": { "path": ["id"] },
@@ -28,5 +30,5 @@
         "author name": { "path": ["author", "name"] }
       }
     }
-  }
+  ]
 }

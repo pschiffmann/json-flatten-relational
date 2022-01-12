@@ -5,13 +5,13 @@ import { TablePreview } from "./table-preview";
 
 interface SerializedSchema {
   readonly version: string;
-  readonly tables: { readonly [name: string]: TableResolver };
+  readonly resolvers: TableResolver[];
 }
 
 export const App: React.FC = () => {
   const [source, setSource] = useState("");
   const [schema, setSchema] = useState("");
-  const [tables, setTables] = useState<{ readonly [name: string]: Table }>();
+  const [tables, setTables] = useState<Map<string, Table>>();
   useEffect(() => {
     fetch("sample-data.json")
       .then((r) => r.text())
@@ -50,7 +50,7 @@ export const App: React.FC = () => {
     try {
       const data = parseSourceJson(source);
       const serializedSchema = parseSchema(schema);
-      setTables(flatten(data, serializedSchema.tables));
+      setTables(flatten(data, serializedSchema.resolvers));
     } catch (e) {
       alert(`${e}`);
       throw e;
@@ -59,7 +59,7 @@ export const App: React.FC = () => {
 
   function createDownloadUrl() {
     const workbook = XLSX.utils.book_new();
-    for (const [name, data] of Object.entries(tables!)) {
+    for (const [name, data] of tables!) {
       const columns = [...data.header];
       const worksheet = XLSX.utils.aoa_to_sheet([
         columns,
@@ -80,14 +80,13 @@ export const App: React.FC = () => {
   return (
     <div className="app">
       <h1>json-flatten-relational</h1>
-      <div className="app__links">
-        <a className="app__link" href="#" target="_blank">
-          Docs
-        </a>
-        <a className="app__link" href="#" target="_blank">
-          GitHub
-        </a>
-      </div>
+      <a
+        className="app__link"
+        href="https://github.com/pschiffmann/json-flatten-relational#readme"
+        target="_blank"
+      >
+        Docs
+      </a>
 
       <h2>JSON source</h2>
       <textarea
@@ -106,7 +105,7 @@ export const App: React.FC = () => {
       <h2>Result</h2>
       {!tables && <button onClick={run}>Run</button>}
       {tables &&
-        Object.entries(tables).map(([name, data]) => (
+        [...tables].map(([name, data]) => (
           <TablePreview key={name} name={name} data={data} />
         ))}
       {tables &&
@@ -145,8 +144,8 @@ function parseSchema(source: string): SerializedSchema {
   if (result.version !== "1") {
     throw new Error("Unsupported schema version.");
   }
-  if (typeof result.tables !== "object") {
-    throw new Error("Schema has no tables.");
+  if (typeof result.resolvers !== "object") {
+    throw new Error("Schema has no table resolvers.");
   }
   return result;
 }

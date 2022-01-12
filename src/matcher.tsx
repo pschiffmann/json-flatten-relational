@@ -9,7 +9,7 @@ export type Matcher =
       readonly captureName?: string;
     }
   | {
-      readonly type: "pattern";
+      readonly type: "regexp";
       readonly pattern: string;
       readonly flags: string;
       readonly captureName?: string;
@@ -21,7 +21,7 @@ export function matches(key: string | number, matcher: Matcher): boolean {
       return key === matcher.key;
     case "index":
       return typeof key === "number";
-    case "pattern":
+    case "regexp":
       return new RegExp(matcher.pattern, matcher.flags).test(key.toString());
   }
 }
