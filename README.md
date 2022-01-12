@@ -58,7 +58,7 @@ Multiple resolvers may write to the same table.
 A list of matchers that are tested against JSON keys.
 The first matcher is tested against all keys of the root level object or array.
 If the first matcher matches a key and that key contains another object or array, then the second matcher is tested against all keys of that object; and so forth until all matchers have matched.
-When a full match is found, that object is used as the root object from which [columns](#resolver.columns) are resolved.
+When a full match is found, that object is used as the root object from which [columns](#resolvercolumns) are resolved.
 
 There are three types of matchers:
 
@@ -74,5 +74,5 @@ For each capture name, a new column with that name is added to the output table 
 ### resolver.columns
 
 A mapping from output table column names to JSON property paths where the column value can be found.
-The paths are resolved beginning from the object matched by [path](#resolver.path).
+The paths are resolved beginning from the object matched by [path](#resolverpath).
 All path segments are tested for exact matches, wildcard patterns are not supported.
