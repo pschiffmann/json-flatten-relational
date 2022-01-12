@@ -1,0 +1,34 @@
+{
+  "version": "1",
+  "resolvers": [
+    {
+      "tableName": "post",
+      "path": [
+        { "type": "literal", "key": "posts" },
+        { "type": "index", "captureName": "index" }
+      ],
+      "columns": {
+        "post id": { "path": ["id"] },
+        "title": { "path": ["title"] },
+        "publish date": { "path": ["publishDate"] },
+        "author id": { "path": ["author", "id"] },
+        "author name": { "path": ["author", "name"] }
+      }
+    },
+    {
+      "tableName": "comment",
+      "path": [
+        { "type": "literal", "key": "posts" },
+        { "type": "index", "captureName": "post index" },
+        { "type": "literal", "key": "comments" },
+        { "type": "index" }
+      ],
+      "columns": {
+        "comment id": { "path": ["id"] },
+        "content": { "path": ["content"] },
+        "author id": { "path": ["author", "id"] },
+        "author name": { "path": ["author", "name"] }
+      }
+    }
+  ]
+}
