@@ -1,94 +1,78 @@
+# json-flatten-relational
+
+**[Online demo](https://pschiffmann.github.io/json-flatten-relational/)**
+
+Converts deeply nested JSON data to flat tables.
+Stores the path segments of converted objects as table columns, so they can be used later as primary/foreign keys to infer the parent/child relations between nested object collections.
+
 ## Example
 
-Input JSON:
+Let's say we've extracted [this JSON data](https://raw.githubusercontent.com/pschiffmann/json-flatten-relational/main/demo/public/sample-data.json) about our blog, and are trying to process it with another software that only understands flat tables as .xlsx files.
+The simple approach – concatenating nested property paths to column names, like below – doesn't work, because each post can have an unlimited number of comments, so this transformation may result in an excessive amount of columns:
 
-```json
-{
-  "posts": [
-    {
-      "id": "35a91c93-41fa-4b55-a2f9-a8de236d0d00",
-      "title": "Hello world",
-      "publishDate": "2021-12-18",
-      "author": {
-        "id": "025309b2-ea1e-4e68-a5a7-c3d2cd25cc98",
-        "name": "jdoe"
-      },
-      "comments": [
-        {
-          "id": "aacb3ab8-14da-42eb-9c02-ee5f6bf8fbd1",
-          "content": "Hello back!",
-          "author": {
-            "id": "df3506dd-a934-4821-af9f-3b2457d231a5",
-            "name": "dsmith"
-          }
-        },
-        {
-          "id": "600830c8-517b-4ca2-b7d5-db2870a6feb8",
-          "content": "Nice to meet you",
-          "author": {
-            "id": "00000000-0000-0000-0000-000000000000",
-            "name": "anonymous"
-          }
-        },
-        {
-          "id": "95745b44-94be-49dd-b340-938794bb586a",
-          "content": "Thanks for the comments everyone",
-          "author": {
-            "id": "025309b2-ea1e-4e68-a5a7-c3d2cd25cc98",
-            "name": "jdoe"
-          }
-        }
-      ]
-    },
-    {
-      "id": "195454cc-0490-44e8-91b5-53cc2ae4505d",
-      "title": "My opinion on XYZ",
-      "publishDate": "2022-01-05",
-      "author": {
-        "id": "025309b2-ea1e-4e68-a5a7-c3d2cd25cc98",
-        "name": "jdoe"
-      },
-      "comments": [
-        {
-          "id": "ed727d60-b318-4a6f-9a98-2117b60d8d59",
-          "content": "Citation needed for paragraph 5",
-          "author": {
-            "id": "df3506dd-a934-4821-af9f-3b2457d231a5",
-            "name": "dsmith"
-          }
-        }
-      ]
-    }
-  ]
-}
-```
+| id           | title          | publishDate | author.id    | author.name | comments.0.id | comments.0.content  | ... |
+| ------------ | -------------- | ----------- | ------------ | ----------- | ------------- | ------------------- | --- |
+| 35a91c93-... | Hello world    | 2021-12-18  | 025309b2-... | jdoe        | aacb3ab8-...  | Hello back!         | ... |
+| 195454cc-... | My opinion ... | 2022-01-05  | 025309b2-... | jdoe        | ed727d60-...  | Citation needed ... | ... |
 
-<details>
-  <summary>schema.json (click to expand)</summary>
+Instead, this package splits nested arrays into separate tables and generates additional columns for each table, so the relationship between table rows can be inferred later.
+For the example blog data, it might generate these tables:
 
-```json
-{
-  "version": "1",
-  "tableResolvers": {}
-}
-```
+**Post**
 
-</details>
+| index | post id      | title          | publish date | author id    | author name |
+| ----- | ------------ | -------------- | ------------ | ------------ | ----------- |
+| 0     | 35a91c93-... | Hello world    | 2021-12-18   | 025309b2-... | jdoe        |
+| 1     | 195454cc-... | My opinion ... | 2022-01-05   | 025309b2-... | jdoe        |
 
-Output tables:
+**Comment**
 
-Post
+| post index | comment id   | content             | author id    | author name |
+| ---------- | ------------ | ------------------- | ------------ | ----------- |
+| 0          | aacb3ab8-... | Hello back!         | df3506dd-... | dsmith      |
+| 0          | 600830c8-... | Nice to meet ...    | 00000000-... | anonymous   |
+| 0          | 95745b44-... | Thanks for ...      | 025309b2-... | jdoe        |
+| 1          | ed727d60-... | Citation needed ... | df3506dd-... | dsmith      |
 
-| index | post id      | title             | publish date | author id    | author name |
-| ----- | ------------ | ----------------- | ------------ | ------------ | ----------- |
-| 0     | 35a91c93-... | Hello world       | 2021-12-18   | 025309b2-... | jdoe        |
-| 1     | 195454cc-... | My opinion on XYZ | 2022-01-05   | 025309b2-... | jdoe        |
+## Schemas
 
-Comment
+The mapping from JSON properties to table columns must be supplied as a schema configuration, which is also written in JSON.
+For now, this package is unable to infer schemas automatically, they must be written by hand.
+An example of a full schema can be found [here](https://raw.githubusercontent.com/pschiffmann/json-flatten-relational/main/demo/public/sample-schema.json).
 
-| post index | comment index | comment id   | content                          | author id    | author name |
-| ---------- | ------------- | ------------ | -------------------------------- | ------------ | ----------- |
-| 0          | 0             | aacb3ab8-... | Hello back!                      | df3506dd-... | dsmith      |
-| 0          | 1             | 600830c8-... | Nice to meet you                 | 00000000-... | anonymous   |
-| 0          | 2             | 95745b44-... | Thanks for the comments everyone | 025309b2-... | jdoe        |
-| 1          | 0             | ed727d60-... | Citation needed for paragraph 5  | df3506dd-... | dsmith      |
+### resolvers
+
+A schema contains one or more resolvers.
+Each resolver finds objects at a certain _path_ and writes them to a specified _table_.
+
+Resolvers are executed independently of each other.
+If multiple resolvers match the same path, each one writes a row to its own output table; even if they share the same table name.
+
+### resolver.tableName
+
+Specifies the output table to which rows are written when the resolver finds a full match.
+Multiple resolvers may write to the same table.
+
+### resolver.path
+
+A list of matchers that are tested against JSON keys.
+The first matcher is tested against all keys of the root level object or array.
+If the first matcher matches a key and that key contains another object or array, then the second matcher is tested against all keys of that object; and so forth until all matchers have matched.
+When a full match is found, that object is used as the root object from which [columns](#resolver.columns) are resolved.
+
+There are three types of matchers:
+
+1.  `{ "type": "literal", "key": "xyz" }` matches the object key `"xyz"`.
+    Key may also be a number, in which case it matches an array index.
+2.  `{ "type": "index" }` matches any array index.
+3.  `{ "type": "regexp", "pattern": "^\w+$", "flags": "i" }` matches any object key that matches the [regular expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+    Array indexes are also tested against the pattern, after being converted to strings.
+
+All matchers can have a `"captureName"` of type string.
+For each capture name, a new column with that name is added to the output table and filled with the matched keys.
+
+### resolver.columns
+
+A mapping from output table column names to JSON property paths where the column value can be found.
+The paths are resolved beginning from the object matched by [path](#resolver.path).
+All path segments are tested for exact matches, wildcard patterns are not supported.
