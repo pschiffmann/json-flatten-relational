@@ -1,7 +1,5 @@
-import { matches, resolveCaptures, resolveValue } from "./matcher";
-import { TableResolver, validate } from "./table-resolver";
-
-export type PrimitiveValue = boolean | number | null | string;
+import { matches, resolveCaptures, ResolvedValue } from "./matcher";
+import { resolveValue, TableResolver, validate } from "./resolvers";
 
 export interface Table {
   /**
@@ -13,18 +11,15 @@ export interface Table {
    * Extracted rows in the order they were encountered in the input JSON. Each
    * row contains only the columns for keys that were found in the input JSON.
    */
-  readonly rows: Record<string, PrimitiveValue>[];
+  readonly rows: Record<string, ResolvedValue>[];
 }
 
-type WriteRow = (
-  tableName: string,
-  row: Record<string, PrimitiveValue>
-) => void;
+type WriteRow = (tableName: string, row: Record<string, ResolvedValue>) => void;
 
 interface TableResolverContext {
   readonly tableResolver: TableResolver;
   readonly nextPathMatcher: number;
-  readonly captures: Map<string, PrimitiveValue>;
+  readonly captures: Map<string, ResolvedValue>;
 }
 
 export function flatten(
@@ -41,6 +36,13 @@ export function flatten(
       nextPathMatcher: 0,
       captures: new Map(),
     });
+    if (resolver.path[0].type === "**") {
+      candidates.push({
+        tableResolver: resolver,
+        nextPathMatcher: 1,
+        captures: new Map(),
+      });
+    }
 
     const { tableName } = resolver;
     let tableCaptureColumns = allCaptureColumns.get(tableName);
@@ -62,16 +64,17 @@ export function flatten(
     tables.set(tableName, { header, rows: [] });
   }
 
-  function writeRow(tableName: string, row: Record<string, PrimitiveValue>) {
+  function writeRow(tableName: string, row: Record<string, ResolvedValue>) {
     tables.get(tableName)!.rows.push(row);
   }
 
-  visit(data, candidates, writeRow);
+  visit(data, [], candidates, writeRow);
   return tables;
 }
 
 function visit(
   data: unknown,
+  ancestors: unknown[],
   candidates: TableResolverContext[],
   writeRow: WriteRow
 ) {
@@ -82,12 +85,12 @@ function visit(
     for (const { tableResolver, nextPathMatcher, captures } of candidates) {
       const matcher = tableResolver.path[nextPathMatcher];
       if (!matches(key, matcher)) continue;
-      const newCaptures = matcher.capture
-        ? resolveCaptures(key, value, matcher, captures)
+      const newCaptures = matcher.captureName
+        ? resolveCaptures(key, matcher, captures)
         : captures;
 
       if (nextPathMatcher === tableResolver.path.length - 1) {
-        extractRow(value, tableResolver, newCaptures, writeRow);
+        extractRow(value, ancestors, tableResolver, newCaptures, writeRow);
       } else {
         keyCandidates.push({
           tableResolver,
@@ -100,37 +103,34 @@ function visit(
             nextPathMatcher,
             captures: newCaptures,
           });
+        } else if (tableResolver.path[nextPathMatcher + 1].type === "**") {
+          keyCandidates.push({
+            tableResolver,
+            nextPathMatcher: nextPathMatcher + 2,
+            captures: newCaptures,
+          });
         }
       }
     }
     if (keyCandidates.length !== 0) {
-      visit(value, keyCandidates, writeRow);
+      visit(value, [value, ...ancestors], keyCandidates, writeRow);
     }
   }
 }
 
 function extractRow(
   data: any,
+  ancestors: unknown[],
   tableResolver: TableResolver,
-  capturedPathSegments: Map<string, PrimitiveValue>,
+  capturedPathSegments: Map<string, ResolvedValue>,
   writeRow: WriteRow
 ) {
-  const row: { [column: string]: PrimitiveValue } = {};
+  const row: { [column: string]: ResolvedValue } = {};
   for (const [column, capturedValue] of capturedPathSegments) {
     row[column] = capturedValue;
   }
   for (const [column, valueResolver] of Object.entries(tableResolver.columns)) {
-    const rawValue = resolveValue(data, valueResolver);
-    switch (typeof rawValue) {
-      case "boolean":
-      case "number":
-      case "string":
-        row[column] = rawValue;
-        break;
-      case "object":
-        row[column] = JSON.stringify(rawValue);
-        break;
-    }
+    row[column] = resolveValue(data, ancestors, valueResolver);
   }
   writeRow(tableResolver.tableName, row);
 }
