@@ -141,7 +141,7 @@ function parseSchema(source: string): SerializedSchema {
     }
     throw e;
   }
-  if (result.version !== "1") {
+  if (result.version !== "2") {
     throw new Error("Unsupported schema version.");
   }
   if (typeof result.resolvers !== "object") {
