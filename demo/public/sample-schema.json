@@ -1,12 +1,9 @@
 {
-  "version": "1",
+  "version": "3",
   "resolvers": [
     {
       "tableName": "post",
-      "path": [
-        { "type": "literal", "key": "posts" },
-        { "type": "index", "captureName": "index" }
-      ],
+      "path": [{ "type": "literal", "key": "posts" }, { "type": "index" }],
       "columns": {
         "post id": { "path": ["id"] },
         "title": { "path": ["title"] },
@@ -18,12 +15,16 @@
     {
       "tableName": "comment",
       "path": [
-        { "type": "literal", "key": "posts" },
-        { "type": "index", "captureName": "post index" },
-        { "type": "literal", "key": "comments" },
+        { "type": "**" },
+        {
+          "type": "regexp",
+          "pattern": "comments|replies",
+          "captureName": "type"
+        },
         { "type": "index" }
       ],
       "columns": {
+        "parent id": { "path": ["id"], "startAtAncestor": 1 },
         "comment id": { "path": ["id"] },
         "content": { "path": ["content"] },
         "author id": { "path": ["author", "id"] },

@@ -15,7 +15,18 @@
           "author": {
             "id": "df3506dd-a934-4821-af9f-3b2457d231a5",
             "name": "dsmith"
-          }
+          },
+          "replies": [
+            {
+              "id": "95745b44-94be-49dd-b340-938794bb586a",
+              "content": "This might be the start of a wonderful friendship",
+              "author": {
+                "id": "025309b2-ea1e-4e68-a5a7-c3d2cd25cc98",
+                "name": "jdoe"
+              },
+              "replies": []
+            }
+          ]
         },
         {
           "id": "600830c8-517b-4ca2-b7d5-db2870a6feb8",
@@ -23,15 +34,8 @@
           "author": {
             "id": "00000000-0000-0000-0000-000000000000",
             "name": "anonymous"
-          }
-        },
-        {
-          "id": "95745b44-94be-49dd-b340-938794bb586a",
-          "content": "Thanks for the comments everyone",
-          "author": {
-            "id": "025309b2-ea1e-4e68-a5a7-c3d2cd25cc98",
-            "name": "jdoe"
-          }
+          },
+          "replies": []
         }
       ]
     },
@@ -50,7 +54,8 @@
           "author": {
             "id": "df3506dd-a934-4821-af9f-3b2457d231a5",
             "name": "dsmith"
-          }
+          },
+          "replies": []
         }
       ]
     }
